@@ -13,7 +13,7 @@
       "src": "https://github.com/stevearc/conform.nvim"
     },
     "fff": {
-      "rev": "c3f2c7f21ce6e528a320313e04d101a9dd4be833",
+      "rev": "4083ea04d30537aaa653a2189616ab6b4ff19810",
       "src": "https://github.com/dmtrKovalenko/fff"
     },
     "filepaths_ls.nvim": {
@@ -37,7 +37,7 @@
       "src": "https://github.com/rafikdraoui/jj-diffconflicts"
     },
     "jjannotate.nvim": {
-      "rev": "fd7f4ddbd995cd8f29ee9bcb31b4563e8bd6251c",
+      "rev": "5589a60dc0b8043cbdb89b2fecd05d6c9c8340c1",
       "src": "https://tangled.org/ronshavit.com/jjannotate.nvim"
     },
     "mason-tool-installer.nvim": {
@@ -53,16 +53,20 @@
       "src": "https://tangled.org/ronshavit.com/mini.diff.jj"
     },
     "mini.nvim": {
-      "rev": "6664ea9af6c43dc31934e27476bbe61c556c8dc1",
+      "rev": "ac5dffcc52b8378fbb15efeb0497a83e57a0b01c",
       "src": "https://github.com/nvim-mini/mini.nvim"
     },
     "multicursor.nvim": {
       "rev": "704b99f10a72cc05d370cfeb294ff83412a8ab55",
       "src": "https://github.com/jake-stewart/multicursor.nvim"
     },
+    "multinput.nvim": {
+      "rev": "f2959e1f5f4a64ae0c79c849d8e0a4af42a8e9e0",
+      "src": "https://github.com/r0nsha/multinput.nvim"
+    },
     "nor.nvim": {
       "rev": "578b9da4ed5ea2cc52fab81855e268cc1ab7f242",
-      "src": "file:///home/ron/dev/nor.nvim"
+      "src": "https://tangled.org/ronshavit.com/nor.nvim"
     },
     "nui.nvim": {
       "rev": "10fc361835c856ba4233ef5ea135b919bf3dce97",
@@ -91,7 +95,7 @@
       "version": "'main'"
     },
     "nvim-ts-context-commentstring": {
-      "rev": "1b212c2eee76d787bbea6aa5e92a2b534e7b4f8f",
+      "rev": "6141a40173c6efa98242dc951ed4b6f892c97027",
       "src": "https://github.com/JoosepAlviste/nvim-ts-context-commentstring"
     },
     "plenary.nvim": {
@@ -109,6 +113,10 @@
     "smart-splits.nvim": {
       "rev": "ec76708f1617ef9e2ac353357fe52d2c997a0f06",
       "src": "https://github.com/mrjones2014/smart-splits.nvim"
+    },
+    "snacks.nvim": {
+      "rev": "882c996cf28183f4d63640de0b4c02ec886d01f2",
+      "src": "https://github.com/folke/snacks.nvim"
     },
     "tiny-inline-diagnostic.nvim": {
       "rev": "6264451f14119d63a52580e5198d6baf8518b0b2",
