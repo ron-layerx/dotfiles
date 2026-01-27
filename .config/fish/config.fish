@@ -1,9 +1,19 @@
 # paths
+
 fish_add_path \
     $HOME/.cargo/bin \
     $HOME/.local/bin \
-    ~/.local/share/bob/nvim-bin \
+    $bob_bin \
     /opt/homebrew/opt/rustup/bin
+
+switch (uname)
+    case Darwin
+        fish_add_path \
+            "~/Library/Application Support/bob/nvim-bin" \
+            /opt/homebrew/opt/rustup/bin
+    case Linux
+        fish_add_path "~/.local/share/bob/nvim-bin"
+end
 
 set config_dir (status dirname)
 source "$config_dir/functions.fish"
