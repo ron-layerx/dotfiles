@@ -37,8 +37,16 @@
       "src": "https://github.com/rafikdraoui/jj-diffconflicts"
     },
     "jjannotate.nvim": {
-      "rev": "fd7f4ddbd995cd8f29ee9bcb31b4563e8bd6251c",
+      "rev": "5589a60dc0b8043cbdb89b2fecd05d6c9c8340c1",
       "src": "https://tangled.org/ronshavit.com/jjannotate.nvim"
+    },
+    "mason-tool-installer.nvim": {
+      "rev": "443f1ef8b5e6bf47045cb2217b6f748a223cf7dc",
+      "src": "https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim"
+    },
+    "mason.nvim": {
+      "rev": "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d",
+      "src": "https://github.com/williamboman/mason.nvim"
     },
     "mini.diff.jj": {
       "rev": "0c43dea746088ce07c1c60f2b3c50e0aa7ff11c2",
@@ -51,6 +59,10 @@
     "multicursor.nvim": {
       "rev": "704b99f10a72cc05d370cfeb294ff83412a8ab55",
       "src": "https://github.com/jake-stewart/multicursor.nvim"
+    },
+    "multinput.nvim": {
+      "rev": "f2959e1f5f4a64ae0c79c849d8e0a4af42a8e9e0",
+      "src": "https://github.com/r0nsha/multinput.nvim"
     },
     "nor.nvim": {
       "rev": "e0165da84729f80e9664666122454d7551c458de",
@@ -83,7 +95,7 @@
       "version": "'main'"
     },
     "nvim-ts-context-commentstring": {
-      "rev": "1b212c2eee76d787bbea6aa5e92a2b534e7b4f8f",
+      "rev": "6141a40173c6efa98242dc951ed4b6f892c97027",
       "src": "https://github.com/JoosepAlviste/nvim-ts-context-commentstring"
     },
     "plenary.nvim": {
@@ -95,12 +107,16 @@
       "src": "https://github.com/stevearc/quicker.nvim"
     },
     "schemastore.nvim": {
-      "rev": "72d144a9e014646963b8a5c67a4fde19b9772528",
+      "rev": "71cd0300fcf13179978e6a6b1f2fc2db677f9c94",
       "src": "https://github.com/b0o/schemastore.nvim"
     },
     "smart-splits.nvim": {
       "rev": "ec76708f1617ef9e2ac353357fe52d2c997a0f06",
       "src": "https://github.com/mrjones2014/smart-splits.nvim"
+    },
+    "snacks.nvim": {
+      "rev": "882c996cf28183f4d63640de0b4c02ec886d01f2",
+      "src": "https://github.com/folke/snacks.nvim"
     },
     "tiny-inline-diagnostic.nvim": {
       "rev": "6264451f14119d63a52580e5198d6baf8518b0b2",
@@ -114,6 +130,18 @@
       "rev": "e123a7ab64e52d836e00dea9251e85b201f38966",
       "src": "https://github.com/chomosuke/typst-preview.nvim",
       "version": "'v1.4.1'"
+    },
+    "vim-dadbod": {
+      "rev": "6d1d41da4873a445c5605f2005ad2c68c99d8770",
+      "src": "https://github.com/tpope/vim-dadbod"
+    },
+    "vim-dadbod-completion": {
+      "rev": "a8dac0b3cf6132c80dc9b18bef36d4cf7a9e1fe6",
+      "src": "https://github.com/kristijanhusak/vim-dadbod-completion"
+    },
+    "vim-dadbod-ui": {
+      "rev": "afd07819d8efcefc3317205b855ad4e3513b0011",
+      "src": "https://github.com/kristijanhusak/vim-dadbod-ui"
     },
     "vim-endwise": {
       "rev": "4994afb0cdf956d9a665a14b9c834869e602c396",
