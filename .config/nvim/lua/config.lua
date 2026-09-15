@@ -128,6 +128,9 @@ vim.opt.foldmethod = "indent"
 vim.opt.foldcolumn = "0"
 vim.opt.foldlevelstart = 99
 
+-- use system clipboard by default
+vim.opt.clipboard:append("unnamedplus")
+
 -- autocmd
 vim.api.nvim_create_autocmd("TermOpen", {
   group = augroup,
@@ -315,7 +318,7 @@ vim.keymap.set("n", "<C-S-G>", function()
 end, { remap = false, desc = "Copy file path to clipboard" })
 
 vim.keymap.set("n", "<c-g>", function()
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-g>", true, true, true), "n", true)
+  vim.api.nvim_feedkeys(vim.keycode("<C-g>"), "n", false)
   local line = vim.fn.line(".")
   copy_line_reference(tostring(line))
 end, { remap = false, desc = "Copy line reference to clipboard" })
@@ -328,7 +331,7 @@ vim.keymap.set("x", "<c-g>", function()
   local lines = start_line == end_line and tostring(start_line)
     or string.format("%d-%d", start_line, end_line)
   copy_line_reference(lines)
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, true, true), "n", true)
+  vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "n", false)
 end, { remap = false, desc = "Copy line reference to clipboard" })
 
 -- Window mappings when tmux is not available
@@ -369,9 +372,6 @@ end, { expr = true })
 -- Justify center search next/prev
 -- vim.keymap.set("n", "n", "nzzzv")
 -- vim.keymap.set("n", "N", "Nzzzv")
-
--- Clear hlsearch
-vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<cr>", { desc = "Clear highlight" })
 
 -- Stay in visual mode when indenting
 vim.keymap.set("x", "<", "<gv")
@@ -603,6 +603,206 @@ _G._myconfig.tabline = function()
 end
 
 vim.opt.tabline = "%!v:lua._myconfig.tabline()"
+
+-- multicursor
+local mc_ns = vim.api.nvim_create_namespace("nvim.multicursor")
+
+---@return boolean
+local function has_mcursors() return #vim.api.nvim_buf_get_extmarks(0, mc_ns, 0, -1) > 0 end
+
+---@return string
+local function vcount() return vim.v.count > 0 and tostring(vim.v.count) or "" end
+
+vim.keymap.set("n", "<Esc>", function()
+  if vim.v.hlsearch == 1 then
+    vim.cmd.nohlsearch()
+    return
+  end
+
+  if has_mcursors() then
+    vim.api.nvim_buf_clear_namespace(0, mc_ns, 0, -1)
+    return ""
+  end
+
+  return "<Esc>"
+end, { expr = true })
+
+-- I tried using `expr = true` first and just returning [C / ]C, but it
+-- doesn't play nicely when follow-mode is on, since mcursors merge
+vim.keymap.set("n", "(", function()
+  if has_mcursors() then
+    vim.api.nvim_input(vcount() .. "[C")
+  else
+    vim.cmd("normal! " .. vcount() .. "(")
+  end
+end, { desc = "Previous cursor" })
+
+vim.keymap.set("n", ")", function()
+  if has_mcursors() then
+    vim.api.nvim_input(vcount() .. "]C")
+  else
+    vim.cmd("normal! " .. vcount() .. ")")
+  end
+end, { desc = "Next cursor" })
+
+vim.keymap.set({ "n", "x" }, "<C-q>", "q=", { desc = "Toggle follow-mode" })
+
+vim.keymap.set("n", "<Up>", "Qk", { desc = "Add cursor above" })
+vim.keymap.set("n", "<Down>", "Qj", { desc = "Add cursor below" })
+vim.keymap.set("n", "<Left>", function()
+  if has_mcursors() then
+    vim.api.nvim_input(vcount() .. "[C")
+  else
+    vim.api.nvim_feedkeys(vim.keycode("<Left>"), "n", false)
+  end
+end, { desc = "Previous cursor" })
+vim.keymap.set("n", "<Right>", function()
+  if has_mcursors() then
+    vim.api.nvim_input(vcount() .. "]C")
+  else
+    vim.api.nvim_feedkeys(vim.keycode("<Right>"), "n", false)
+  end
+end, { desc = "Next cursor" })
+
+---@param pattern string
+---@param backwards boolean?
+local function cursor_add_match(pattern, backwards)
+  vim.fn.setreg("/", pattern)
+  vim.fn.search(pattern, backwards and "b" or "")
+end
+
+---@param backwards boolean?
+local function cursor_add_match_normal(backwards)
+  local word = vim.fn.expand("<cword>") --[[@as string]]
+  vim.api.nvim_feedkeys("viwOQ", "n", false)
+  vim.schedule(function() cursor_add_match("\\V\\<" .. word .. "\\>", backwards) end)
+end
+
+vim.keymap.set("n", "<C-n>", cursor_add_match_normal, { desc = "Add cursor match next" })
+vim.keymap.set(
+  "n",
+  "<C-S-N>",
+  function() cursor_add_match_normal(true) end,
+  { desc = "Add cursor match previous" }
+)
+
+-- Move primary cursor to the mcursor nearest to its position
+local function set_cursor_to_nearest_mcursor()
+  local origin = vim.api.nvim_win_get_cursor(0)
+  local origin_row, origin_col = origin[1] - 1, origin[2]
+
+  ---@type integer?, integer?, integer?, integer?, integer?
+  local nid, nrow, ncol, dist_row, dist_col
+
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(0, mc_ns, 0, -1, {})) do
+    local id, row, col = mark[1], mark[2], mark[3]
+    local row_dist = math.abs(row - origin_row)
+    local col_dist = math.abs(col - origin_col)
+    if nid == nil or row_dist < dist_row or (row_dist == dist_row and col_dist < dist_col) then
+      nid, nrow, ncol = id, row, col
+      dist_row, dist_col = row_dist, col_dist
+    end
+  end
+
+  if nid and nrow and ncol then
+    vim.api.nvim_buf_del_extmark(0, mc_ns, nid) -- avoid duplicate cursor.
+    vim.api.nvim_win_set_cursor(0, { nrow + 1, ncol })
+  end
+end
+
+---@param pattern string
+local function cursor_place_search_matches(pattern)
+  if pattern ~= "" then vim.fn.setreg("/", pattern) end
+  vim.cmd.nohlsearch()
+  vim.cmd("normal! 1Q1q=") -- Place cursor at every match and enable follow-mode
+  set_cursor_to_nearest_mcursor()
+end
+
+vim.keymap.set("c", "<C-q>", function()
+  local ctype = vim.fn.getcmdtype()
+  if ctype ~= "/" and ctype ~= "?" then return "<C-q>" end
+
+  local pattern = vim.fn.getcmdline()
+  vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "n", false)
+  vim.schedule(function() cursor_place_search_matches(pattern) end)
+  return ""
+end, { expr = true, desc = "Place cursor at every search match" })
+
+vim.keymap.set("n", "mn", function()
+  cursor_place_search_matches(vim.fn.getreg("/") --[[@as string]])
+end, { desc = "Place cursor at every search match" })
+
+vim.keymap.set(
+  "n",
+  "mm",
+  function() cursor_place_search_matches("\\V\\<" .. vim.fn.expand("<cword>") .. "\\>") end,
+  { desc = "Place cursor at every search match" }
+)
+
+vim.keymap.set("x", "m", function()
+  vim.ui.input({ prompt = "pattern", scope = "cursor" }, function(input)
+    if not input then return end
+    input = vim.trim(input)
+    if input == "" then return end
+    vim.schedule(function() cursor_place_search_matches(input) end)
+  end)
+end, { desc = "Place cursor at every search match" })
+
+vim.keymap.set("x", "M", function()
+  local p_start, p_end = vim.fn.getpos("v"), vim.fn.getpos(".")
+  local region = vim.fn.getregion(p_start, p_end, { type = "v", exclusive = false })
+  local text = table.concat(region, "\n")
+  if text == "" then return end
+  local escaped = vim.fn.escape(text, [[\/]]):gsub("\n", "\\n")
+  local pattern = text:match("^[%w_]+$") and ("\\V\\<" .. escaped .. "\\>") or ("\\V" .. escaped)
+  vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "n", false)
+  vim.schedule(function() cursor_place_search_matches(pattern) end)
+end, { desc = "Place cursor at every visual selection match" })
+
+---@param pos "start" | "end"
+local function cursor_add_at_visual_sel(pos)
+  local is_start = pos == "start"
+  local place = vim.fn.line(".")
+  local l1, l2 = math.min(vim.fn.line("v"), place), math.max(vim.fn.line("v"), place)
+
+  local col
+  local mode = vim.fn.mode():sub(1, 1)
+  local linewise, blockwise = mode == "V", mode == "\22"
+  if linewise then
+    col = is_start and 0 or 0x7fffffff
+  else
+    local c1, c2 = vim.fn.col("v"), vim.fn.col(".")
+    col = is_start and math.min(c1, c2) - 1 or math.max(c1, c2)
+  end
+
+  vim.api.nvim_buf_clear_namespace(0, mc_ns, 0, -1)
+  vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "n", false)
+  vim.schedule(function()
+    for l = l1, l2 do
+      if l ~= place and not (blockwise and vim.fn.getline(l) == "") then
+        vim.api.nvim_mcursor(0, { l, col })
+      end
+    end
+    vim.api.nvim_win_set_cursor(0, { place, col })
+    vim.schedule(
+      function() vim.api.nvim_feedkeys("1q=" .. (is_start and "i" or "a"), "n", false) end
+    )
+  end)
+end
+
+vim.keymap.set(
+  "x",
+  "I",
+  function() cursor_add_at_visual_sel("start") end,
+  { desc = "Place cursor at start of visual selection" }
+)
+
+vim.keymap.set(
+  "x",
+  "A",
+  function() cursor_add_at_visual_sel("end") end,
+  { desc = "Place cursor at end of visual selection" }
+)
 
 -- -- atom ring
 -- local last_atom ---@type vim.event.cmdatom.data?
