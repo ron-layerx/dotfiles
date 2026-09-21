@@ -1,9 +1,4 @@
-local w = require("watch")
-
-local types = {
-  dark = "dark",
-  light = "light",
-}
+local types = { dark = "dark", light = "light" }
 
 local path = vim.fn.expand("~/.cache") .. "/theme"
 
@@ -58,4 +53,4 @@ end
 
 vim.async.run("theme.update_background", update_background)
 
-w.watch(path, { on_event = update_background })
+require("watch").watch(path, { on_event = require("utils").debounce(update_background, 50) })

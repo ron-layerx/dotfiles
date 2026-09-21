@@ -5,30 +5,21 @@ function Utils.is_macos() return vim.fn.has("macunix") == 1 end
 ---@param v boolean
 function Utils.bool_to_enabled(v) return v and "enabled" or "disabled" end
 
----@param callback function
+---@param callback async fun(...)
 ---@param timeout integer
----@return function | { cancel: function }
+---@return async fun(...)
 function Utils.debounce(callback, timeout)
-  local timer = vim.uv.new_timer()
+  local pending ---@type vim.async.Task?
 
-  if not timer then return callback end
-
-  local t = {}
-
-  setmetatable(t, {
-    __call = function(_, ...)
-      local argv = { ... }
-      timer:stop()
-      timer:start(timeout, 0, function()
-        timer:stop()
-        callback(unpack(argv))
-      end)
-    end,
-  })
-
-  t.cancel = function() timer:stop() end
-
-  return t
+  return function(...)
+    local argv = { ... }
+    if pending then pending:close() end
+    pending = vim.async.run(function()
+      vim.async.sleep(timeout)
+      pending = nil
+      return callback(unpack(argv))
+    end)
+  end
 end
 
 ---@return integer, integer
