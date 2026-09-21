@@ -1,36 +1,34 @@
-local uv = vim.uv
-
 local M = {}
 
 ---@class Opts
 ---@field is_oneshot boolean
 
 ---@alias Unwatch fun()
----@alias OnEvent fun(filename: string, events: table, unwatch: Unwatch)
----@alias OnError fun(error: function, unwatch: Unwatch)
----@alias Runnable {on_event: OnEvent, on_error: OnError}
+---@alias OnEvent async fun(filename: string, events: table, unwatch: Unwatch)
+---@alias OnError async fun(err: any, unwatch: Unwatch)
+---@alias Runnable {on_event: OnEvent, on_error: OnError?}
 
 --- @param path string
---- @param on_event function
+--- @param on_event OnEvent
 --- @param on_error OnError
 --- @param opts Opts
 --- @return uv.uv_fs_event_t|nil
 local function _watch(path, on_event, on_error, opts)
-  local handle = uv.new_fs_event()
+  local handle = vim.uv.new_fs_event()
   if not handle then return nil end
 
-  local unwatch_cb = function() uv.fs_event_stop(handle) end
+  local unwatch = function() vim.uv.fs_event_stop(handle) end
 
   local event_cb = function(err, filename, events)
     if err then
-      on_error(error, unwatch_cb)
+      vim.async.run("watch.on_error", on_error, err, unwatch):raise_on_error()
     else
-      on_event(filename, events, unwatch_cb)
+      vim.async.run("watch.on_event", on_event, filename, events, unwatch):raise_on_error()
     end
-    if opts.is_oneshot then unwatch_cb() end
+    if opts.is_oneshot then unwatch() end
   end
 
-  uv.fs_event_start(handle, path, {}, event_cb)
+  vim.uv.fs_event_start(handle, path, {}, event_cb)
 
   return handle
 end
@@ -41,8 +39,8 @@ end
 --- @return uv.uv_fs_event_t|nil
 local function do_watch(path, runnable, opts)
   if runnable.on_error == nil then
-    runnable.on_error = function(error, _)
-      error('watch("' .. path .. '", ...) ' .. "encountered an error: " .. error)
+    runnable.on_error = function(err, _)
+      error('watch("' .. path .. '", ...) ' .. "encountered an error: " .. tostring(err))
     end
   end
 
@@ -62,7 +60,7 @@ end
 ---@return integer|nil
 function M.unwatch(handle)
   if not handle then return nil end
-  local err, _, _ = uv.fs_event_stop(handle)
+  local err, _, _ = vim.uv.fs_event_stop(handle)
   return err
 end
 

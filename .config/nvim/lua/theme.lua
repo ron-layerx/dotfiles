@@ -1,4 +1,3 @@
-local uv = vim.uv
 local w = require("watch")
 
 local types = {
@@ -10,15 +9,15 @@ local path = vim.fn.expand("~/.cache") .. "/theme"
 
 ---@return boolean
 local function validate_path()
-  local stat = uv.fs_stat(path)
+  local stat = vim.uv.fs_stat(path)
 
   -- create theme file if it doesn't exist, default to dark
   if not stat then
-    local fd = uv.fs_open(path, "w", 420)
+    local fd = vim.uv.fs_open(path, "w", 420)
     if not fd then return false end
 
-    uv.fs_write(fd, types.dark, -1)
-    uv.fs_close(fd)
+    vim.uv.fs_write(fd, types.dark, -1)
+    vim.uv.fs_close(fd)
   end
 
   -- warn if it exists but is a directory
@@ -35,34 +34,28 @@ end
 
 if not validate_path() then return end
 
+---@async
 local function update_background()
-  uv.fs_open(path, "r", 420, function(_err, fd)
-    if not fd then return end
+  local open_err, fd = vim.async.await(4, vim.uv.fs_open, path, "r", 420)
+  if open_err or not fd then return end
 
-    uv.fs_fstat(fd, function(_err, stat)
-      if not stat then
-        uv.fs_close(fd)
-        return
-      end
+  local data
+  local stat_err, stat = vim.async.await(2, vim.uv.fs_fstat, fd)
+  if not stat_err and stat then
+    local read_err, content = vim.async.await(4, vim.uv.fs_read, fd, stat.size, 0)
+    if not read_err then data = content end
+  end
 
-      uv.fs_read(fd, stat.size, 0, function(_err, data)
-        uv.fs_close(fd, function() end)
-        if not data then return end
+  vim.async.await(2, vim.uv.fs_close, fd)
+  if not data then return end
 
-        vim.schedule(function()
-          data = data:gsub("\n$", "") -- remove trailing newline
-          if (data ~= types.dark and data ~= types.light) or data == vim.o.background then
-            return
-          end
-          vim.o.background = data
-        end)
-      end)
-    end)
-  end)
+  vim.async.await(vim.schedule) -- resume on the main loop
+
+  data = data:gsub("\n$", "") -- remove trailing newline
+  if (data ~= types.dark and data ~= types.light) or data == vim.o.background then return end
+  vim.o.background = data
 end
 
-update_background()
+vim.async.run("theme.update_background", update_background)
 
-w.watch(path, {
-  on_event = function() update_background() end,
-})
+w.watch(path, { on_event = update_background })
