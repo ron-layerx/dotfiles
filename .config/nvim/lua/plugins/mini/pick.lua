@@ -155,7 +155,7 @@ local function fff_grep(query)
 
   local res = require("fff").content_search(query, {
     mode = fff_grep_mode,
-    smart_case = true,
+    casing = "smart",
     page_size = 200,
     cwd = vim.fn.getcwd(),
   })
