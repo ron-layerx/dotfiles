@@ -15,15 +15,11 @@ end
 ---@param result vim.SystemCompleted
 ---@return string[]?, string?
 local function parse_rustup_targets(result)
-  if result.code ~= 0 then
+  if result.code ~= 0 or not result.stdout then
     return nil, result.stderr ~= "" and result.stderr or "failed to load rustup targets"
   end
 
-  local targets = {}
-  for _, line in ipairs(vim.split(result.stdout, "\n", { trimempty = true })) do
-    targets[#targets + 1] = line
-  end
-  return targets, nil
+  return vim.split(result.stdout, "\n", { trimempty = true }), nil
 end
 
 ---@param client vim.lsp.Client

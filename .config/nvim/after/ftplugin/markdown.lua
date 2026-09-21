@@ -25,14 +25,12 @@ local function toggle_checkboxes_visual()
 
   local checkbox_lines = {}
   local all_on = true
-  local all_off = true
 
   for i, line in ipairs(lines) do
     if line:match("^%s*%- %[ %]") then
       all_on = false
       table.insert(checkbox_lines, i)
     elseif line:match("^%s*%- %[x%]") then
-      all_off = false
       table.insert(checkbox_lines, i)
     end
   end
@@ -43,15 +41,7 @@ local function toggle_checkboxes_visual()
     return
   end
 
-  -- decide target
-  local turn_on
-  if all_off then
-    turn_on = true
-  elseif all_on then
-    turn_on = false
-  else
-    turn_on = true
-  end
+  local turn_on = not all_on
 
   for _, i in ipairs(checkbox_lines) do
     if turn_on then

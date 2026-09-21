@@ -56,7 +56,7 @@ require("nvim-treesitter-textobjects").setup({
       ["@statement.outer"] = "V",
       ["@comment.outer"] = "V",
     },
-    include_surrounding_whitespace = function(opts) return opts.selection_mode == "V" end,
+    include_surrounding_whitespace = function(opts) return opts.method == "visual" end,
   },
   move = { set_jumps = true },
 })
@@ -69,16 +69,16 @@ local shared = require("nvim-treesitter-textobjects.shared")
 local function select_textobject(queries)
   if type(queries) ~= "table" then return select.select_textobject(queries, "textobjects") end
 
-  for _, query in ipairs(queries) do
-    if
-      shared.textobject_at_point(query, "textobjects", nil, nil, {
-        lookahead = config.select.lookahead,
-        lookbehind = config.select.lookbehind,
-      })
-    then
-      return select.select_textobject(query, "textobjects")
-    end
-  end
+  local opts = {
+    lookahead = config.select and config.select.lookahead,
+    lookbehind = config.select and config.select.lookbehind,
+  }
+
+  local query = vim.iter(queries):find(
+    ---@param q string
+    function(q) return shared.textobject_at_point(q, "textobjects", nil, nil, opts) end
+  )
+  if query then return select.select_textobject(query, "textobjects") end
 end
 
 local textobjects = {

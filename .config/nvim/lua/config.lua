@@ -691,22 +691,31 @@ local function set_cursor_to_nearest_mcursor()
   local origin = vim.api.nvim_win_get_cursor(0)
   local origin_row, origin_col = origin[1] - 1, origin[2]
 
-  ---@type integer?, integer?, integer?, integer?, integer?
-  local nid, nrow, ncol, dist_row, dist_col
-
-  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(0, mc_ns, 0, -1, {})) do
-    local id, row, col = mark[1], mark[2], mark[3]
-    local row_dist = math.abs(row - origin_row)
-    local col_dist = math.abs(col - origin_col)
-    if nid == nil or row_dist < dist_row or (row_dist == dist_row and col_dist < dist_col) then
-      nid, nrow, ncol = id, row, col
-      dist_row, dist_col = row_dist, col_dist
-    end
+  ---@param a vim.api.keyset.get_extmark_item
+  ---@param b vim.api.keyset.get_extmark_item
+  ---@return boolean
+  local function closer(a, b)
+    local a_row, a_col = math.abs(a[2] - origin_row), math.abs(a[3] - origin_col)
+    local b_row, b_col = math.abs(b[2] - origin_row), math.abs(b[3] - origin_col)
+    return a_row < b_row or (a_row == b_row and a_col < b_col)
   end
 
-  if nid and nrow and ncol then
-    vim.api.nvim_buf_del_extmark(0, mc_ns, nid) -- avoid duplicate cursor.
-    vim.api.nvim_win_set_cursor(0, { nrow + 1, ncol })
+  ---@type vim.api.keyset.get_extmark_item?
+  local nearest = vim.iter(vim.api.nvim_buf_get_extmarks(0, mc_ns, 0, -1)):fold(
+    nil,
+    ---@param best vim.api.keyset.get_extmark_item?
+    ---@param mark vim.api.keyset.get_extmark_item
+    ---@return vim.api.keyset.get_extmark_item
+    function(best, mark)
+      if best == nil or closer(mark, best) then return mark end
+      return best
+    end
+  )
+
+  if nearest then
+    local id, row, col = unpack(nearest)
+    vim.api.nvim_buf_del_extmark(0, mc_ns, id) -- avoids mcursor behind primary cursor
+    vim.api.nvim_win_set_cursor(0, { row + 1, col })
   end
 end
 

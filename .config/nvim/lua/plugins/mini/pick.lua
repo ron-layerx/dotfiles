@@ -98,18 +98,49 @@ local function fff_files(query)
     cwd = vim.fn.getcwd(),
   })
 
-  local items = {}
-  for _, item in ipairs(res.items or {}) do
-    item.path = item.relative_path
-    item.text = item.relative_path
-    items[#items + 1] = item
-  end
-  ---@cast items FileItem[]
-  return items
+  local items = res.items --[[@type FileItem[] ]]
+  if #items == 0 then return {} end
+
+  ---@type FileItem[]
+  return vim
+    .iter(items)
+    :map(
+      ---@param item FileItem
+      function(item)
+        return vim.tbl_extend(
+          "force",
+          item,
+          { path = item.relative_path, text = item.relative_path }
+        )
+      end
+    )
+    :totable()
 end
 
 ---@alias GrepMode "regex"|"fuzzy"
----@alias FffGrepItem FileItem & { text: string, lnum: integer, col: integer, line_content: string }
+
+--- Grep match item as serialized by fff (crates/fff-nvim/src/lua_types.rs).
+--- fff ships no class for these; `FileItem` only covers `mode="files"`.
+--- Shape is file metadata + match metadata.
+---@class fff.GrepItem
+---@field relative_path string
+---@field name string
+---@field is_binary boolean
+---@field is_binary_content boolean
+---@field git_status string|nil
+---@field size number
+---@field modified number
+---@field total_frecency_score number
+---@field access_frecency_score number
+---@field modification_frecency_score number
+---@field line_number integer
+---@field col integer
+---@field byte_offset integer
+---@field line_content string
+---@field match_ranges number[][]|nil
+---@field fuzzy_score number|nil
+
+---@alias FffGrepMiniPickItem fff.GrepItem & { path: string, lnum: integer, col: integer, text: string }
 
 ---@type table<GrepMode, GrepMode>
 local fff_next_grep_mode = { fuzzy = "regex", regex = "fuzzy" }
@@ -118,7 +149,7 @@ local fff_next_grep_mode = { fuzzy = "regex", regex = "fuzzy" }
 local fff_grep_mode = "fuzzy"
 
 ---@param query string?
----@return FffGrepItem[]
+---@return FffGrepMiniPickItem[]
 local function fff_grep(query)
   if not query or query == "" then return {} end
 
@@ -129,45 +160,65 @@ local function fff_grep(query)
     cwd = vim.fn.getcwd(),
   })
 
-  if res.regex_fallback_error then
-    vim.schedule(
-      function() vim.notify("FFF regex error: " .. res.regex_fallback_error, vim.log.levels.WARN) end
-    )
-  end
+  if res.regex_fallback_error then return {} end
 
-  local items = {}
-  for _, m in ipairs(res.items or {}) do
-    m.path = m.relative_path
-    m.lnum = m.line_number
-    m.col = (m.col or 0) + 1
-    m.text = string.format("%s:%d:%d: %s", m.relative_path, m.lnum, m.col, m.line_content or "")
-    items[#items + 1] = m
-  end
-  return items
+  local items = res.items --[[@type fff.GrepItem[] ]]
+  if #items == 0 then return {} end
+
+  return vim
+    .iter(items)
+    :map(
+      ---@param item fff.GrepItem
+      function(item)
+        local lnum = item.line_number
+        local col = (item.col or 0) + 1
+        return vim.tbl_extend("force", item, {
+          path = item.relative_path,
+          lnum = lnum,
+          col = col,
+
+          text = string.format(
+            "%s:%d:%d: %s",
+            item.relative_path,
+            lnum,
+            col,
+            item.line_content or ""
+          ),
+        })
+      end
+    )
+    :totable()
 end
 
 local fff_ns = vim.api.nvim_create_namespace("MiniPick FFF")
 
 ---@param buf_id integer
----@param items FffGrepItem[]
+---@param items FffGrepMiniPickItem[]
 local function show_fff_grep(buf_id, items)
-  local lines, prefixes, icon_hls = {}, {}, {}
-  for i, item in ipairs(items) do
-    local icon, icon_hl = MiniIcons.get("file", item.relative_path)
-    prefixes[i] = icon .. " "
-    icon_hls[i] = icon_hl
-    lines[i] = prefixes[i] .. item.text
-  end
+  local rendered = vim
+    .iter(items)
+    :map(function(item)
+      local icon, icon_hl = MiniIcons.get("file", item.relative_path)
+      local prefix = icon .. " "
+      return { prefix = prefix, hl = icon_hl, line = prefix .. item.text }
+    end)
+    :totable()
 
-  vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+  vim.api.nvim_buf_set_lines(
+    buf_id,
+    0,
+    -1,
+    false,
+    vim.iter(rendered):map(function(r) return r.line end):totable()
+  )
   vim.api.nvim_buf_clear_namespace(buf_id, fff_ns, 0, -1)
 
   for i, item in ipairs(items) do
-    local prefix_len = #prefixes[i]
+    local prefix_len = #rendered[i].prefix
     vim.api.nvim_buf_set_extmark(buf_id, fff_ns, i - 1, 0, {
       end_row = i - 1,
       end_col = prefix_len,
-      hl_group = icon_hls[i],
+      hl_group = rendered[i].hl,
       hl_mode = "combine",
       priority = 200,
     })
@@ -281,12 +332,11 @@ local function pick_plugins()
     source = {
       name = "Plugins",
       items = function()
-        local items = {}
-        for _, path in ipairs(vim.fn.glob(opt_dir .. "/*", true, true)) do
-          if vim.fn.isdirectory(path) == 1 then
-            items[#items + 1] = { path = path, text = vim.fn.fnamemodify(path, ":t") }
-          end
-        end
+        local items = vim
+          .iter(vim.fn.glob(opt_dir .. "/*", true, true))
+          :filter(function(path) return vim.fn.isdirectory(path) == 1 end)
+          :map(function(path) return { path = path, text = vim.fn.fnamemodify(path, ":t") } end)
+          :totable()
         table.sort(items, function(a, b) return a.text < b.text end)
         return items
       end,
