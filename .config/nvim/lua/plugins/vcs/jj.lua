@@ -11,6 +11,13 @@ vim.api.nvim_create_autocmd("User", {
   end,
 })
 
+vim.g.jjannotate_opts = {
+  mappings = {
+    prev_change = "<C-p>",
+    next_change = "<C-n>",
+  },
+}
+
 vim.keymap.set(
   "n",
   "<leader>gb",

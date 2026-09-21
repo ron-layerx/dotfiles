@@ -40,6 +40,7 @@ vim.pack.add({
   src.gh("julienvincent/hunk.nvim"),
   src.gh("rafikdraoui/jj-diffconflicts"),
   src.tngl("ronshavit.com/jjannotate.nvim"),
+  -- "file:///home/ron/dev/jjannotate.nvim",
   { src = src.gh("chomosuke/typst-preview.nvim"), version = "v1.4.1" },
   src.gh("Wansmer/treesj"),
 })

@@ -1,7 +1,7 @@
 {
   "plugins": {
     "canola.nvim": {
-      "rev": "608cd79544c3adc853d0400f1f540e4f2aa4c024",
+      "rev": "8173bc716f29797ce0ad94359565a20e17a0b88c",
       "src": "https://github.com/barrettruth/canola.nvim"
     },
     "codediff.nvim": {
@@ -37,7 +37,7 @@
       "src": "https://github.com/rafikdraoui/jj-diffconflicts"
     },
     "jjannotate.nvim": {
-      "rev": "fd7f4ddbd995cd8f29ee9bcb31b4563e8bd6251c",
+      "rev": "1d815041db4d44e05376b2cf4c2e999ccc7422a1",
       "src": "https://tangled.org/ronshavit.com/jjannotate.nvim"
     },
     "mini.diff.jj": {
@@ -45,7 +45,7 @@
       "src": "https://tangled.org/ronshavit.com/mini.diff.jj"
     },
     "mini.nvim": {
-      "rev": "4389a4f31f854ce066949ea89c72dc71564f5c20",
+      "rev": "92fb7b4bd38e932a3d435d0317e08ecf6f54b2b7",
       "src": "https://github.com/nvim-mini/mini.nvim"
     },
     "nor.nvim": {
@@ -91,7 +91,7 @@
       "src": "https://github.com/stevearc/quicker.nvim"
     },
     "schemastore.nvim": {
-      "rev": "b73cf982d16ff69e528d2ab269482f11c0825f64",
+      "rev": "be687d17e4a9443e918c48c3c915b1f2ffd0f718",
       "src": "https://github.com/b0o/schemastore.nvim"
     },
     "smart-splits.nvim": {
