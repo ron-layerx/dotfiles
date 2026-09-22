@@ -2,7 +2,7 @@
   "plugins": {
     "canola.nvim": {
       "rev": "8173bc716f29797ce0ad94359565a20e17a0b88c",
-      "src": "https://github.com/barrettruth/canola.nvim"
+      "src": "https://forge.barrettruth.com/barrettruth/canola.nvim"
     },
     "codediff.nvim": {
       "rev": "09d9ebef2cc5a5c04db7a349cd6c61bdf84ecc8e",
