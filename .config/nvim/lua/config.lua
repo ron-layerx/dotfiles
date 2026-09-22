@@ -664,18 +664,18 @@ vim.keymap.set("n", "<Right>", function()
   end
 end, { desc = "Next cursor" })
 
----@param pattern string
----@param backwards boolean?
-local function cursor_add_match(pattern, backwards)
-  vim.fn.setreg("/", pattern)
-  vim.fn.search(pattern, backwards and "b" or "")
-end
-
 ---@param backwards boolean?
 local function cursor_add_match_normal(backwards)
-  local word = vim.fn.expand("<cword>") --[[@as string]]
-  vim.api.nvim_feedkeys("viwOQ", "n", false)
-  vim.schedule(function() cursor_add_match("\\V\\<" .. word .. "\\>", backwards) end)
+  local char = vim.fn.strcharpart(vim.fn.getline(".") --[[@as string]], vim.fn.col(".") - 1, 1)
+  if char == "" then return end
+
+  local pattern = vim.fn.match(char, "\\k") == 0 and ("\\V\\<" .. vim.fn.expand("<cword>") .. "\\>")
+    or ("\\V" .. vim.fn.escape(char, "\\"))
+
+  local row, col = unpack(vim.fn.searchpos(pattern, "bcnW"))
+  vim.api.nvim_mcursor(0, { row, col - 1 })
+  vim.fn.setreg("/", pattern)
+  vim.fn.search(pattern, backwards and "b" or "")
 end
 
 vim.keymap.set("n", "<C-n>", cursor_add_match_normal, { desc = "Add cursor match next" })
